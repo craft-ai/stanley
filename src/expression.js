@@ -46,31 +46,6 @@ export function sendStoryWithLastTopic(user, id) {
   };
 }
 
-//
-// let handleMore = context => {
-//   if (_.isUndefined(context.currentTopic)) {
-//     return Promise.resolve('You need to ask be about a particular topic first!');
-//   }
-//   else {
-//     return handleStory(context, context.currentTopic);
-//   }
-// };
-//
-// let handleRecommendation = context => {
-//   return CRAFT_CLIENT.getAgentDecisionTree(context.agentId)
-//   .then(tree => {
-//     const decision = decide(tree, new Time());
-//     const confidence = decision.confidence;
-//     const topic = decision.decision.topic;
-//     if (confidence > 0.8 && topic !== CRAFT_TOPIC_NULL ) {
-//       return handleStory(context, topic);
-//     }
-//     else {
-//       return 'I don\'t know you well enough to recommend you something now.';
-//     }
-//   });
-// };
-//
-// let handleGreetings = context => {
-//   return Promise.resolve('Hi there!');
-// };
+export function greetUser(user, id) {
+  return dispatch => dispatch(sendMessage(`Hello @${user.nick}!`, id));
+}

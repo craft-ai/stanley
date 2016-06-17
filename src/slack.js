@@ -8,7 +8,7 @@ dotenv.load({ silent: true });
 
 const SLACK_CLIENT = new RtmClient(process.env.SLACK_TOKEN, {
   // Sets the level of logging we require
-  logLevel: 'error',
+  logLevel: 'info',
   // Initialise a data store for our client, this will load additional helper functions for the storing and retrieval of data
   dataStore: new MemoryDataStore(),
   // Boolean indicating whether Slack should automatically reconnect after an error response
@@ -57,11 +57,13 @@ export function start() {
         id: me.id,
         nick: me.name
       }));
-      dispatch(joinChannel('stanley_testing'));
+      const mainChannel = SLACK_CLIENT.dataStore.getChannelByName(process.env.SLACK_MAIN_CHANNEL);
+      dispatch(sendMessage(':up:', mainChannel.id));
 
-      SLACK_CLIENT.on(RTM_EVENTS.MESSAGE, (message, err) => {
+      const onMessage = (message, err) => {
         if (err) {
           dispatch(errorReceived(err));
+          dispatch(sendMessage(':warning:', mainChannel.id));
         }
         else if (
           message.text && (
@@ -75,15 +77,22 @@ export function start() {
             id: message.user,
             nick: user.name
           }, message.text, message.channel))
-          .catch(err => dispatch(errorReceived(err)));
+          .catch(err => {
+            dispatch(errorReceived(err));
+            dispatch(sendMessage(':warning:', mainChannel.id));
+          });
         }
-      });
-
-      SLACK_CLIENT.on(CLIENT_EVENTS.RTM.WS_ERROR, (err) => {
+      };
+      const onWsError = (err) => {
         dispatch(errorReceived(err));
-        const channel = SLACK_CLIENT.dataStore.getChannelByName('stanley_testing');
-        dispatch(sendMessage('Woups, something unexpected happened !', channel.id));
-      });
+        dispatch(sendMessage(':warning:', mainChannel.id));
+      };
+      if (!SLACK_CLIENT.listeners(RTM_EVENTS.MESSAGE, true)) {
+        SLACK_CLIENT.on(RTM_EVENTS.MESSAGE, onMessage);
+      }
+      if (!SLACK_CLIENT.listeners(CLIENT_EVENTS.RTM.WS_ERROR, true)) {
+        SLACK_CLIENT.on(CLIENT_EVENTS.RTM.WS_ERROR, onWsError);
+      }
     });
   };
 }

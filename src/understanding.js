@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import { createCraftAgent, recommandTopic } from './learning';
 import { sendMessage, typeMessage } from './slack';
-import { sendStory, sendStoryWithLastTopic } from './expression';
+import { sendStory, sendStoryWithLastTopic, greetUser } from './expression';
 import dotenv from 'dotenv';
 import recast from 'recastai';
 import { newInterlocutor } from './actions';
@@ -43,7 +43,7 @@ export function handleMessage(inboundUser, message, id) {
             }
           }
         case 'greetings':
-          return dispatch(sendMessage(`Hello @${inboundUser.nick}!`, id));
+          return dispatch(greetUser(inboundUser, id));
         case 'more':
           return dispatch(sendStoryWithLastTopic(inboundUser, id));
         case 'recommended_story':
