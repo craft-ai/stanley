@@ -10,13 +10,13 @@ dotenv.load({ silent: true });
 
 const RECAST_CLIENT = new recast.Client(process.env.RECAST_TOKEN);
 
-export function handleMessage(inboundUser, message, id) {
+export function handleMessage(slackUser, message, id) {
   return (dispatch, getState) => {
     return dispatch(typeMessage(id))
     .then(() => {
-      if (_.isUndefined(getState().interlocutors[inboundUser.nick])) {
-        return dispatch(createCraftAgent(inboundUser))
-        .then(inboundUser => dispatch(newInterlocutor(inboundUser)));
+      if (_.isUndefined(getState().interlocutors[slackUser.nick])) {
+        return dispatch(createCraftAgent(slackUser))
+        .then(slackUser => dispatch(newInterlocutor(slackUser)));
       }
       else {
         return Promise.resolve();
@@ -30,37 +30,37 @@ export function handleMessage(inboundUser, message, id) {
       }
     })))
     .then(response => {
+      const { user } = getState().interlocutors[slackUser.nick];
       const intent = response.intent();
       switch (intent) {
         case 'story':
           {
             const topic = response.get('topic');
             if (_.isUndefined(topic)) {
-              return dispatch(sendMessage(`Sorry @${inboundUser.nick}, I didn't understood the topic you were asking about...`, id));
+              return dispatch(sendMessage(`Sorry @${user.nick}, I didn't understood the topic you were asking about...`, id));
             }
             else {
-              return dispatch(sendStory(inboundUser, response.get('topic').raw, id));
+              return dispatch(sendStory(user, response.get('topic').raw, id));
             }
           }
         case 'greetings':
-          return dispatch(greetUser(inboundUser, id));
+          return dispatch(greetUser(user, id));
         case 'more':
-          return dispatch(sendStoryWithLastTopic(inboundUser, id));
+          return dispatch(sendStoryWithLastTopic(user, id));
         case 'recommended_story':
           {
-            const { user } = getState().interlocutors[inboundUser.nick];
             return dispatch(recommandTopic(user))
             .then(topic => {
               if (_.isUndefined(topic)) {
-                return dispatch(sendMessage(`Sorry @${inboundUser.nick}, I don't have enough knowledge of your tastes yet...`, id));
+                return dispatch(sendMessage(`Sorry @${user.nick}, I don't have enough knowledge of your tastes yet...`, id));
               }
               else {
-                return dispatch(sendStory(inboundUser, topic, id));
+                return dispatch(sendStory(user, topic, id));
               }
             });
           }
         default:
-          return dispatch(sendMessage(`Sorry @${inboundUser.nick}, I didn't understood what you meant.`, id));
+          return dispatch(sendMessage(`Sorry @${user.nick}, I didn't understood what you meant.`, id));
       }
     });
   };

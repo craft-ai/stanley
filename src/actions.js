@@ -1,3 +1,5 @@
+import { Time } from 'craft-ai';
+
 export function botIdentityReceived(user) {
   return {
     type: 'BOT_IDENTITY_RECEIVED',
@@ -20,11 +22,15 @@ export function newInterlocutor(user) {
   };
 }
 
-export function storySent(user, story) {
+export function storySent(user, story, id) {
   return {
     type: 'STORY_SENT',
     user,
-    story
+    story: {
+      ...story,
+      where: id,
+      when: Time().utc
+    }
   };
 }
 

@@ -1,8 +1,8 @@
 import 'babel-polyfill';
 
 import configureStore from './store';
-import { start } from './slack';
+import bot from './bot';
 
 let store = configureStore();
 
-store.dispatch(start());
+store.dispatch(bot());

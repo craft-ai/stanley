@@ -4,11 +4,11 @@ import { searchTweetsByTopic } from './twitter';
 import { sendMessage } from './slack';
 import { storySent } from './actions';
 
-export function sendStory(inboundUser, topic, id) {
+export function sendStory(user, topic, id) {
   return (dispatch, getState) => {
     return searchTweetsByTopic(topic)
     .then(tweets => {
-      const { stories, user } = getState().interlocutors[inboundUser.nick];
+      const { stories } = getState().interlocutors[user.nick];
       const selectedTweet = _.find(tweets, tweet => _.find(stories, story => story.id === tweet.id) === undefined);
       if (selectedTweet) {
         const story = {
@@ -24,7 +24,7 @@ ${selectedTweet.text}
           `, id)),
           dispatch(learnAboutStory(user, story))
         ])
-        .then(() => dispatch(storySent(user, story)));
+        .then(() => dispatch(storySent(user, story, id)));
       }
       else {
         return dispatch(sendMessage(`Sorry @${user.nick}, I have nothing to show you at the moment.`, id));
