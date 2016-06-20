@@ -26,7 +26,7 @@ const CRAFT_MODEL = {
     }
   },
   output: ['topic'],
-  time_quantum: 4
+  time_quantum: 10 * 60
 };
 
 export function createCraftAgent(user) {

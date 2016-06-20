@@ -42,3 +42,4 @@ jspm_packages
 # Environment variables file
 .env
 bin
+state.json

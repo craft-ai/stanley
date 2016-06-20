@@ -1,8 +1,9 @@
 import _ from 'lodash';
 import { errorReceived } from './actions';
 import { recommandTopic } from './learning';
+import { save } from './serialization';
 import { sendStory } from './expression';
-import { start, sendMessage } from './slack';
+import { start } from './slack';
 import { Time } from 'craft-ai';
 
 const DEAMON_SLEEP_TIME = 60;
@@ -47,9 +48,21 @@ function checkNeedToSendStory() {
   };
 }
 
+function saveState() {
+  return (dispatch, getState) => {
+    return save(getState(), './state.json')
+    .catch(err => {
+      dispatch(errorReceived(err));
+    });
+  };
+}
+
 export default function bot() {
   return dispatch => {
     dispatch(start());
-    setInterval(() => dispatch(checkNeedToSendStory()), DEAMON_SLEEP_TIME * 1000);
+    setInterval(() => {
+      dispatch(checkNeedToSendStory());
+      dispatch(saveState());
+    }, DEAMON_SLEEP_TIME * 1000);
   };
 }
