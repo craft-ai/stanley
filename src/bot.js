@@ -1,27 +1,30 @@
 import _ from 'lodash';
-import { errorReceived } from './actions';
-import { recommandTopic } from './learning';
+import { errorReceived, MESSAGE_TYPES } from './actions';
+import { learnAboutStory, recommandTopic } from './learning';
 import { save } from './serialization';
 import { sendStory } from './expression';
 import { start } from './slack';
 import { Time } from 'craft-ai';
 
-const DEAMON_SLEEP_TIME = 60;
-const TIME_BEFORE_RECOMMENDATION = 10 * 60;
+const DEAMON_SLEEP_TIME = 2 * 60;
+const TIME_BEFORE_RECOMMENDATION = 5 * 60;
+const TIME_BEFORE_LOSING_INTEREST = 20 * 60;
 
-function checkNeedToSendStory() {
+function checkNeedToPushStory() {
   return (dispatch, getState) => {
     const now = Time();
 
     return Promise.all(_(getState().interlocutors)
-      .map(interlocutor =>
-        interlocutor.stories.length > 0 ? {
-          when: _.last(interlocutor.stories).when,
-          where: _.last(interlocutor.stories).where,
+      .map(interlocutor => {
+        const lastStory = _(interlocutor.messages)
+          .filter(message => message.type === MESSAGE_TYPES.PULLED_STORY || message.type === MESSAGE_TYPES.PUSHED_STORY)
+          .last();
+        return lastStory ? {
+          when: _.last(interlocutor.messages).when,
+          where: _.last(interlocutor.messages).where,
           user: interlocutor.user
-        } :
-        undefined
-      )
+        } : undefined;
+      })
       .filter(
         interaction => interaction && (now.timestamp - Time(interaction.when).timestamp > TIME_BEFORE_RECOMMENDATION)
       )
@@ -39,12 +42,41 @@ function checkNeedToSendStory() {
       )
       .sample();
       if (interaction) {
-        return dispatch(sendStory(interaction.user, interaction.recommendedTopic, interaction.where));
+        return dispatch(sendStory(interaction.user, interaction.recommendedTopic, interaction.where, false));
       }
     })
     .catch(err => {
       dispatch(errorReceived(err));
     });
+  };
+}
+
+function checkLosingInterest() {
+  return (dispatch, getState) => {
+    const now = Time();
+
+    return Promise.all(_(getState().interlocutors)
+      .map(interlocutor => {
+        const lastPulledStory = _(interlocutor.messages)
+          .filter(message => message.type === MESSAGE_TYPES.PULLED_STORY)
+          .last();
+        if (lastPulledStory && (now.timestamp - Time(lastPulledStory.when).timestamp > TIME_BEFORE_LOSING_INTEREST)) {
+          return interlocutor.user;
+        }
+        else {
+          return undefined;
+        }
+      })
+      .compact()
+      .thru(users => {
+        if (users.length > 0) {
+          console.log(`${now.utc}: ${users.length} users losing interest...`, users);
+        }
+        return users;
+      })
+      .map(user => dispatch(learnAboutStory(user)))
+      .value())
+    .catch(err => dispatch(errorReceived(err)));
   };
 }
 
@@ -61,7 +93,8 @@ export default function bot() {
   return dispatch => {
     dispatch(start());
     setInterval(() => {
-      dispatch(checkNeedToSendStory());
+      dispatch(checkNeedToPushStory());
+      dispatch(checkLosingInterest());
       dispatch(saveState());
     }, DEAMON_SLEEP_TIME * 1000);
   };

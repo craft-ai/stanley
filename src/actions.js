@@ -7,14 +7,6 @@ export function botIdentityReceived(user) {
   };
 }
 
-export function messageSent(message, recipient) {
-  return {
-    type: 'MESSAGE_SENT',
-    message,
-    recipient
-  };
-}
-
 export function newInterlocutor(user) {
   return {
     type: 'NEW_INTERLOCUTOR',
@@ -22,14 +14,21 @@ export function newInterlocutor(user) {
   };
 }
 
-export function storySent(user, story, id) {
+export const MESSAGE_TYPES = {
+  GREETINGS: 'GREETINGS',
+  PULLED_STORY: 'PULLED_STORY',
+  PUSHED_STORY: 'PUSHED_STORY'
+};
+
+export function messageSent(type, id, user, content = undefined) {
   return {
-    type: 'STORY_SENT',
+    type: 'MESSAGE_SENT',
     user,
-    story: {
-      ...story,
+    message: {
+      type,
       where: id,
-      when: Time().utc
+      when: Time().utc,
+      content
     }
   };
 }

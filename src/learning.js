@@ -53,13 +53,13 @@ export function createCraftAgent(user) {
   };
 }
 
-export function learnAboutStory(user, story) {
+export function learnAboutStory(user, story = undefined) {
   return dispatch => {
     const t = new Time();
     return CRAFT_CLIENT.addAgentContextOperations(user.craft_agent, {
       timestamp: t.timestamp,
       diff: {
-        topic: story.topic,
+        topic: story ? story.topic : CRAFT_TOPIC_NULL,
         tz: t.timezone
       }
     }, true);

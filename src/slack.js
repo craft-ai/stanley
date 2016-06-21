@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { botIdentityReceived, errorReceived, messageSent } from './actions';
+import { botIdentityReceived, errorReceived } from './actions';
 import { handleMessage } from './understanding';
 import { RtmClient, CLIENT_EVENTS, RTM_EVENTS, MemoryDataStore } from '@slack/client';
 import dotenv from 'dotenv';
@@ -26,7 +26,7 @@ export function typeMessage(id) {
 
 export function sendMessage(message, id) {
   return dispatch => new Promise((resolve, reject) => {
-    SLACK_CLIENT.sendMessage(message, id,  err => {
+    SLACK_CLIENT.sendMessage(message, id, err => {
       if (err) {
         reject(err);
       }
@@ -34,8 +34,7 @@ export function sendMessage(message, id) {
         resolve(id);
       }
     });
-  })
-  .then(() => dispatch(messageSent));
+  });
 }
 
 export function joinChannel(channelName) {

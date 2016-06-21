@@ -13,7 +13,7 @@ export default function reducer(state, action) {
         let newInterlocutors = {};
         newInterlocutors[nick] = _.extend({}, state.interlocutors[nick], {
           user: action.user,
-          stories: []
+          messages: []
         });
         return {
           ...state,
@@ -23,12 +23,12 @@ export default function reducer(state, action) {
           }
         };
       }
-    case 'STORY_SENT':
+    case 'MESSAGE_SENT':
       {
         const nick = action.user.nick;
         let newInterlocutors = {};
         newInterlocutors[nick] = _.cloneDeep(state.interlocutors[nick]);
-        newInterlocutors[nick].stories.push(action.story);
+        newInterlocutors[nick].messages.push(action.message);
         return {
           ...state,
           interlocutors: {
